@@ -47,3 +47,17 @@ def poly_to_msg(a):
     '''
     pass
 
+def poly_compress(a):
+    pass
+
+def poly_decompress(a):
+    pass
+
+def get_noise_poly(seed, nonce, k):
+    pass
+
+def gen_prf_byte_array():
+    pass
+
+def poly_csubq(a):
+    pass
