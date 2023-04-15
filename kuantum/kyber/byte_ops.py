@@ -1,5 +1,5 @@
 from num_type import int16, int32, uint16, uint32
-from constants import PARAMS_Q_INV, PARAMS_Q, PARAMS_N, PARAMS_ETA_1, PARAMS_ETA_2
+from constants import PARAMS_N, PARAMS_ETA_1, PARAMS_ETA_2
 
 
 def load24_bit(byte):
