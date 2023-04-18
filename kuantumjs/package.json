@@ -11,5 +11,8 @@
   "license": "ISC",
   "devDependencies": {
     "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "alea-generator": "^1.0.0"
   }
 }
