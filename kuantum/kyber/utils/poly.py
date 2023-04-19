@@ -1,4 +1,4 @@
-from constants import PARAMS_N, PARAMS_Q, COMPRESSED_BYTES_512
+from constants import PARAMS_N, PARAMS_Q, COMPRESSED_BYTES_512, COMPRESSED_BYTES_1024
 from num_type import int16, int32, uint16, uint32, byte
 from types import List
 
@@ -93,6 +93,7 @@ def poly_compress(a, k):
     t = [0 for x in range(8)]
     a = poly_csubq(a)
     if k == 2 or k == 3:
+        r = [0 for _ in range(COMPRESSED_BYTES_512)]
         for i in range(PARAMS_N // 8):
             for j in range(8):
                 t[j] = byte(((uint16(a[8*i+j])<<4)+uint16(PARAMS_Q/2))/uint16(PARAMS_Q)) & 15
@@ -102,9 +103,10 @@ def poly_compress(a, k):
             r[rr+3] = byte(t[6] | (t[7] << 4))
             rr = rr + 4
     else:
+        r = [0 for _ in range(COMPRESSED_BYTES_1024)]
         for i in range(PARAMS_N // 8):
             for j in range(8):
-                t[j] = byte(((uint32(a[8*i+j])<<5)+uint32(paramsQ/2))/uint32(paramsQ)) & 31
+                t[j] = byte(((uint32(a[8*i+j])<<5)+uint32(PARAMS_Q/2))/uint32(PARAMS_Q)) & 31
             r[rr+0] = (t[0] >> 0) | (t[1] << 5)
             r[rr+1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7)
             r[rr+2] = (t[3] >> 1) | (t[4] << 4)
