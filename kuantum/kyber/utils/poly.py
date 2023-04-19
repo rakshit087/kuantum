@@ -1,18 +1,37 @@
-from constants import PARAMS_N, PARAMS_Q
+from constants import PARAMS_N, PARAMS_Q, COMPRESSED_BYTES_512
 from num_type import int16, int32, uint16, uint32, byte
-
-# adds two polynomials.
-
+from types import List
 
 def poly_add(a, b):
-    pass
+    '''
+    Add two polynomials; no modular reduction is performed
 
-# subtracts two polynomials.
+    arg0: first polynomial
+    arg1: second polynomial 
+    '''
+    c = [a[i] + b[i] for i in range(len(a))]
+    return c
 
+def poly_sub(a, b):
+    '''
+    Subtract two polynomials; no modular reduction is performed
 
-def poly_sub():
-    pass
+    arg0: first polynomial
+    arg1: second polynomial
+    '''
+    c = [a[i] - b[i] for i in range(len(a))]
+    return c
 
+def poly_conditional_sub_q(r: List[int]):
+    '''
+    Apply the conditional subtraction of Q (KyberParams) to each coefficient of a
+
+    arg0: polynomial
+    '''
+    for i in range(PARAMS_N):
+        r[i] -= int16(PARAMS_Q)
+        r[i] += (r[i] >> 31) & int16(PARAMS_Q)
+    return r
 
 def poly_barret_reduce():
     pass
@@ -62,9 +81,37 @@ def poly_to_msg(a):
     pass
 
 
-def poly_compress(a):
-    pass
+def poly_compress(a, k):
+    '''
+    Compression and subsequent serialization of a polynomial
 
+    arg0: polynomial
+    arg1: value of PARAM_K
+    '''
+    rr = 0
+    r = []
+    t = [0 for x in range(8)]
+    a = poly_csubq(a)
+    if k == 2 or k == 3:
+        for i in range(PARAMS_N // 8):
+            for j in range(8):
+                t[j] = byte(((uint16(a[8*i+j])<<4)+uint16(PARAMS_Q/2))/uint16(PARAMS_Q)) & 15
+            r[rr+0] = byte(t[0] | (t[1] << 4))
+            r[rr+1] = byte(t[2] | (t[3] << 4))
+            r[rr+2] = byte(t[4] | (t[5] << 4))
+            r[rr+3] = byte(t[6] | (t[7] << 4))
+            rr = rr + 4
+    else:
+        for i in range(PARAMS_N // 8):
+            for j in range(8):
+                t[j] = byte(((uint32(a[8*i+j])<<5)+uint32(paramsQ/2))/uint32(paramsQ)) & 31
+            r[rr+0] = (t[0] >> 0) | (t[1] << 5)
+            r[rr+1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7)
+            r[rr+2] = (t[3] >> 1) | (t[4] << 4)
+            r[rr+3] = (t[4] >> 4) | (t[5] << 1) | (t[6] << 6)
+            r[rr+4] = (t[6] >> 2) | (t[7] << 3)
+            rr = rr + 5
+    return r
 
 def poly_decompress(a, k):
     '''
