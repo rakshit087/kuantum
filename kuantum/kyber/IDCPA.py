@@ -1,9 +1,9 @@
-from constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAMS_Q, PARAMS_N
-from constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
-from num_type import uint16, int16, byte
-from ntt import ntt
-from poly import get_noise_poly, poly_barret_reduce, poly_montgomery_reduce, poly_add, poly_to_bytes
-from poly_vect import polyvec_pointwise_mul
+from kuantum.kyber.utils.constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAMS_Q, PARAMS_N
+from kuantum.kyber.utils.constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
+from kuantum.kyber.utils.num_type import uint16, int16, byte
+from kuantum.kyber.utils.ntt import ntt
+from kuantum.kyber.utils.poly import get_noise_poly, poly_barret_reduce, poly_montgomery_reduce
+from kuantum.kyber.utils.poly_vect import polyvec_pointwise_mul
 from Crypto.Random import get_random_bytes
 from Crypto.Hash import SHA3_512, SHAKE128
 
@@ -99,8 +99,8 @@ class IDCPA:
 
         # generate matrix A
         A = self.gen_matrix(public_seed, False)
-        s = [0 for _ in range(self.k)] # secret
-        e = [0 for _ in range(self.k)] # noise
+        s = [] # secret
+        e = [] # noise
         nonce = 0
 
         for i in range(self.k):
@@ -119,35 +119,35 @@ class IDCPA:
         for i in range(self.k):
             pk[i] = poly_montgomery_reduce(polyvec_pointwise_mul(A[i], s, self.k))
 
-        for i in range(self.k):
-            pk[i] = poly_add(pk[i], e[i])
+        # for i in range(self.k):
+        #     pk[i] = poly_add(pk[i], e[i])
         
-        for i in range(self.k):
-            pk[i] = poly_barret_reduce(pk[i])
+        # for i in range(self.k):
+        #     pk[i] = poly_barret_reduce(pk[i])
 
-        keys = {
-            'public_key': [],
-            'secret_key': []
-        }
+        # keys = {
+        #     'public_key': [],
+        #     'secret_key': []
+        # }
 
-        #Public Key
-        pk_bytes = []
-        for i in range(self.k):
-            byte_array = poly_to_bytes(pk[i])
-            for j in range(len(byte_array)):
-                keys['public_key'].append(byte_array[j])
+        # #Public Key
+        # pk_bytes = []
+        # for i in range(self.k):
+        #     byte_array = poly_to_bytes(pk[i])
+        #     for j in range(len(byte_array)):
+        #         keys['public_key'].append(byte_array[j])
 
-        # append public seed
-        for i in range(len(public_seed)):
-            keys['public_key'].append(public_seed[i])
+        # # append public seed
+        # for i in range(len(public_seed)):
+        #     keys['public_key'].append(public_seed[i])
         
-        #Secret Key
-        for i in range(self.k):
-            byte_array = poly_to_bytes(s[i])
-            for j in range(len(byte_array)):
-                keys['secret_key'].append(byte_array[j])
+        # #Secret Key
+        # for i in range(self.k):
+        #     byte_array = poly_to_bytes(s[i])
+        #     for j in range(len(byte_array)):
+        #         keys['secret_key'].append(byte_array[j])
 
-        return keys
+        # return keys
 
 
     def idcpa_enc(self):

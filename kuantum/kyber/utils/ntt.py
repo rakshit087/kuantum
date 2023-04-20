@@ -1,5 +1,5 @@
-from constants import NTT_ZETAS, NTT_ZETAS_INV
-from reduce import montgomery_reduce, barrett_reduce
+from kuantum.kyber.utils.constants import NTT_ZETAS, NTT_ZETAS_INV
+from kuantum.kyber.utils.reduce import montgomery_reduce, barrett_reduce
 
 
 def ntt(r):

@@ -1,5 +1,5 @@
-from num_type import int16, int32, uint16, uint32
-from constants import PARAMS_N, PARAMS_ETA_1, PARAMS_ETA_2, POLY_BYTES
+from kuantum.kyber.utils.num_type import int16, int32, uint32
+from kuantum.kyber.utils.constants import PARAMS_N, PARAMS_ETA_1, PARAMS_ETA_2, POLY_BYTES
 
 
 def load24_bit(byte):

@@ -1,9 +1,9 @@
-from constants import PARAMS_N, PARAMS_Q, NTT_ZETAS, PARAMS_ETA_1, PARAMS_ETA_2
-from constants import COMPRESSED_BYTES_512, COMPRESSED_BYTES_1024, POLY_BYTES
-from num_type import int16, uint16, uint32, byte
-from reduce import barrett_reduce, montgomery_reduce
-from ntt import base_multiplier
-from byte_ops import gen_cbd_pol
+from kuantum.kyber.utils.constants import PARAMS_N, PARAMS_Q, NTT_ZETAS, PARAMS_ETA_1, PARAMS_ETA_2
+from kuantum.kyber.utils.constants import COMPRESSED_BYTES_512, COMPRESSED_BYTES_1024, POLY_BYTES
+from kuantum.kyber.utils.num_type import int16, uint16, uint32, byte
+from kuantum.kyber.utils.reduce import barrett_reduce, montgomery_reduce
+from kuantum.kyber.utils.ntt import base_multiplier
+from kuantum.kyber.utils.byte_ops import gen_cbd_pol
 from Crypto.Hash import SHAKE256
 
 def poly_add(a, b):

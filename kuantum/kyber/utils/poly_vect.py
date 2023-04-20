@@ -1,7 +1,7 @@
-from constants import POLY_BYTES, PARAMS_N, PARAMS_Q
-from num_type import uint16, uint32, int16, byte
-from poly import barrett_reduce, poly_from_bytes, poly_conditional_sub_q, base_multiplier, poly_add
-from ntt import invntt, ntt
+from kuantum.kyber.utils.constants import POLY_BYTES, PARAMS_N, PARAMS_Q
+from kuantum.kyber.utils.num_type import uint16, uint32, int16, byte
+from kuantum.kyber.utils.poly import barrett_reduce, poly_from_bytes, poly_conditional_sub_q, poly_add, poly_base_mul
+from kuantum.kyber.utils.ntt import invntt, ntt
 
 POLYVEC_COMPRESSED_BYTES_512 = 640
 POLYVEC_COMPRESSED_BYTES_768 = 960
@@ -99,10 +99,10 @@ def polyvec_pointwise_mul(a, b, k):
     Pointwise-multiplies elements of the given polynomial-vectors ,
     accumulates the results , and then multiplies by 2^-16
     '''
-    r = base_multiplier(a[0], b[0])
+    r = poly_base_mul(a[0], b[0])
     t = None
     for i in range(1, k):
-        t = base_multiplier(a[i], b[i])
+        t = poly_base_mul(a[i], b[i])
         r = poly_add(r, t)
     return barrett_reduce(r)
 
