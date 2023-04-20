@@ -1,9 +1,11 @@
-from utils.constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAMS_Q, PARAMS_N
-from utils.constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
-from utils.num_type import uint16, uint32, int16, int32, byte
+from constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAMS_Q, PARAMS_N
+from constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
+from num_type import uint16, int16, byte
+from ntt import ntt
+from poly import get_noise_poly, poly_barret_reduce, poly_montgomery_reduce, poly_add, poly_to_bytes
+from poly_vect import polyvec_pointwise_mul
 from Crypto.Random import get_random_bytes
 from Crypto.Hash import SHA3_512, SHAKE128
-from typing import List, Tuple
 
 
 class IDCPA:
@@ -17,7 +19,16 @@ class IDCPA:
         if type == 'kyber1024':
             self.k = PARAMS_K_1024
 
-    def gen_matrix(self, seed, transposed: bool):
+    def gen_matrix(self, seed, transposed):
+        '''
+        Deterministically generate matrix A (or the transpose of A)
+        from a seed. Entries of the matrix are polynomials that look
+        uniformly random. Performs rejection sampling on output of
+        a XOF
+
+        arg0: seed
+        arg1: boolean deciding whether A or A^T is generated
+        '''
         a = [[[0 for x in range(0, POLY_BYTES)]
               for y in range(0, self.k)] for z in range(0, self.k)]
         ctr = 0
@@ -31,7 +42,7 @@ class IDCPA:
                     transpose[0] = byte(j)
                     transpose[1] = byte(i)
                 seed_unsigned = [x & 0xff for x in seed]
-                xof.update(seed_unsigned).update(bytearray(transpose))
+                xof.update(bytearray(seed_unsigned)).update(bytearray(transpose))
                 buf = xof.read(672)
                 buf_signed = [byte(x) for x in buf]
                 result = self.idcpa_rej_uniform(
@@ -41,14 +52,14 @@ class IDCPA:
                 ctr = result[1]
                 while ctr < PARAMS_N:
                     missing, ctrn = self.idcpa_rej_uniform(
-                        buf_signed[504:672], 168, PARAMS_N - uniform_i
+                        buf_signed[504:672], 168, PARAMS_N - ctr
                     )
-                    for k in range(uniform_i, PARAMS_N):
-                        a[i][j][k] = missing[k - uniform_i]
-                    uniform_i = uniform_i + ctrn
+                    for k in range(ctr, PARAMS_N):
+                        a[i][j][k] = missing[k - ctr]
+                    ctr = ctr + ctrn
         return a
 
-    def idcpa_rej_uniform(self, buf, buf_len: int, req_len: int):
+    def idcpa_rej_uniform(self, buf, buf_len, req_len):
         '''
          Run rejection sampling on uniform random bytes to generate uniform random integers mod q
 
@@ -84,14 +95,67 @@ class IDCPA:
         # generate seed, public seed and noiseseed
         seed = h.digest()
         public_seed = [seed[i] for i in range(PARAMS_SYSTEM_BYTES)]
-        noiseseed = [seed[i]
-                     for i in range(PARAMS_SYSTEM_BYTES, 2*PARAMS_SYSTEM_BYTES)]
+        noiseseed = [seed[i] for i in range(PARAMS_SYSTEM_BYTES, 2*PARAMS_SYSTEM_BYTES)]
 
         # generate matrix A
         A = self.gen_matrix(public_seed, False)
+        s = [0 for _ in range(self.k)] # secret
+        e = [0 for _ in range(self.k)] # noise
+        nonce = 0
+
+        for i in range(self.k):
+            s.append(get_noise_poly(noiseseed, i, self.k))
+            e.append(get_noise_poly(noiseseed, i+self.k, self.k))
+
+        for i in range(self.k):
+            s[i] = ntt(s[i])
+            e[i] = ntt(e[i])
+
+        for i in range(self.k):
+            s[i] = poly_barret_reduce(s[i])
+
+        pk = [0 for _ in range(self.k)]
+
+        for i in range(self.k):
+            pk[i] = poly_montgomery_reduce(polyvec_pointwise_mul(A[i], s, self.k))
+
+        for i in range(self.k):
+            pk[i] = poly_add(pk[i], e[i])
+        
+        for i in range(self.k):
+            pk[i] = poly_barret_reduce(pk[i])
+
+        keys = {
+            'public_key': [],
+            'secret_key': []
+        }
+
+        #Public Key
+        pk_bytes = []
+        for i in range(self.k):
+            byte_array = poly_to_bytes(pk[i])
+            for j in range(len(byte_array)):
+                keys['public_key'].append(byte_array[j])
+
+        # append public seed
+        for i in range(len(public_seed)):
+            keys['public_key'].append(public_seed[i])
+        
+        #Secret Key
+        for i in range(self.k):
+            byte_array = poly_to_bytes(s[i])
+            for j in range(len(byte_array)):
+                keys['secret_key'].append(byte_array[j])
+
+        return keys
+
 
     def idcpa_enc(self):
         pass
 
     def idcpa_dec(self):
         pass
+
+idcpa = IDCPA()
+keys = idcpa.idcpa_gen_keypair()
+print(keys)
