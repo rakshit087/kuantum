@@ -215,7 +215,7 @@ def get_noise_poly(seed, nonce, k):
     return gen_cbd_pol(buf, k)
 
 
-def gen_prf_byte_array(l, key, nonce):
+def gen_prf_byte_array(key, nonce, l):
     hash = [0 for _ in range(l)]
     xof = SHAKE256.new()
     new_key = [0 for _ in range(0, len(key) + 1)]
