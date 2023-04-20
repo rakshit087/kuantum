@@ -1,5 +1,5 @@
 from num_type import int16, int32, uint16, uint32
-from constants import PARAMS_N, PARAMS_ETA_1, PARAMS_ETA_2
+from constants import PARAMS_N, PARAMS_ETA_1, PARAMS_ETA_2, POLY_BYTES
 
 
 def load24_bit(byte):
@@ -39,7 +39,7 @@ def gen_cbd_pol(buff, eta):
     
     return: array with coefficients
     '''
-    r = [0] * 384
+    r = [0 for i in range(POLY_BYTES)]
     if eta == 2:
         for i in range(0, PARAMS_N // 4):
             t = load24_bit(buff[3 * i:])

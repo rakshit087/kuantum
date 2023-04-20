@@ -1,1 +1,37 @@
 ven
+
+# Ignore pycache
+
+__pycache__
+
+# Ignore .env
+
+.env
+
+# Ignore .vscode
+
+.vscode
+
+# Ignore .idea
+
+.idea
+
+# Ignore .mypy_cache
+
+.mypy_cache
+
+# Ignore .pytest_cache
+
+.pytest_cache
+
+# Ignore .coverage
+
+.coverage
+
+# Ignore .coverage.*
+
+.coverage.*
+
+# Ignore .coverage.*
+
+.covera
