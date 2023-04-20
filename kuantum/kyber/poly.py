@@ -5,7 +5,6 @@ from reduce import barrett_reduce, montgomery_reduce
 from ntt import base_multiplier
 from byte_ops import gen_cbd_pol
 from Crypto.Hash import SHAKE256
-from types import List
 
 def poly_add(a, b):
     '''
@@ -27,7 +26,7 @@ def poly_sub(a, b):
     c = [a[i] - b[i] for i in range(len(a))]
     return c
 
-def poly_conditional_sub_q(r: List[int]):
+def poly_conditional_sub_q(r):
     '''
     Apply the conditional subtraction of Q (KyberParams) to each coefficient of a
 
