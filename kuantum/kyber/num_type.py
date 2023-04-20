@@ -29,10 +29,10 @@ def int16(x):
     return x
 
 # Convert a number to a unsigned 32-bit representation
-def uint32(self, x):
+def uint32(x):
     x = x % 4294967296
     while x < 4294967296:
-        n += 4294967296
+        x += 4294967296
     return x
     
 # Convert a number to a signed 32-bit representation
