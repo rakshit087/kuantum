@@ -2,7 +2,7 @@ from kuantum.kyber.utils.constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAM
 from kuantum.kyber.utils.constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
 from kuantum.kyber.utils.num_type import uint16, int16, byte
 from kuantum.kyber.utils.ntt import ntt
-from kuantum.kyber.utils.poly import get_noise_poly, poly_barret_reduce, poly_montgomery_reduce
+from kuantum.kyber.utils.poly import get_noise_poly, poly_barret_reduce, poly_montgomery_reduce, poly_add, poly_to_bytes
 from kuantum.kyber.utils.poly_vect import polyvec_pointwise_mul
 from Crypto.Random import get_random_bytes
 from Crypto.Hash import SHA3_512, SHAKE128
@@ -20,7 +20,7 @@ class IDCPA:
             self.k = PARAMS_K_1024
 
     def gen_matrix(self, seed, transposed):
-        '''
+        """
         Deterministically generate matrix A (or the transpose of A)
         from a seed. Entries of the matrix are polynomials that look
         uniformly random. Performs rejection sampling on output of
@@ -28,7 +28,7 @@ class IDCPA:
 
         arg0: seed
         arg1: boolean deciding whether A or A^T is generated
-        '''
+        """
         a = [[[0 for x in range(0, POLY_BYTES)]
               for y in range(0, self.k)] for z in range(0, self.k)]
         ctr = 0
@@ -69,9 +69,8 @@ class IDCPA:
         '''
         uniform_r = [0 for x in range(POLY_BYTES)]
         i, j = 0, 0
-        d1, d2 = None, None
 
-        while (i < req_len and (j+3) <= buf_len):
+        while i < req_len and (j + 3) <= buf_len:
             d1 = (uint16((buf[j]) >> 0) | (uint16(buf[j+1]) << 8)) & 0xFFF
             d2 = (uint16((buf[j+1]) >> 4) | (uint16(buf[j+2]) << 4)) & 0xFFF
             j += 3
@@ -82,7 +81,7 @@ class IDCPA:
                 uniform_r[i] = int16(d2)
                 i += 1
 
-        return (uniform_r, i)
+        return uniform_r, i
 
     def idcpa_gen_keypair(self):
         # random bytes for seed
@@ -119,35 +118,35 @@ class IDCPA:
         for i in range(self.k):
             pk[i] = poly_montgomery_reduce(polyvec_pointwise_mul(A[i], s, self.k))
 
-        # for i in range(self.k):
-        #     pk[i] = poly_add(pk[i], e[i])
+        for i in range(self.k):
+            pk[i] = poly_add(pk[i], e[i])
         
-        # for i in range(self.k):
-        #     pk[i] = poly_barret_reduce(pk[i])
+        for i in range(self.k):
+            pk[i] = poly_barret_reduce(pk[i])
 
-        # keys = {
-        #     'public_key': [],
-        #     'secret_key': []
-        # }
+        keys = {
+            'public_key': [],
+            'secret_key': []
+        }
 
-        # #Public Key
-        # pk_bytes = []
-        # for i in range(self.k):
-        #     byte_array = poly_to_bytes(pk[i])
-        #     for j in range(len(byte_array)):
-        #         keys['public_key'].append(byte_array[j])
+        #Public Key
+        pk_bytes = []
+        for i in range(self.k):
+            byte_array = poly_to_bytes(pk[i])
+            for j in range(len(byte_array)):
+                keys['public_key'].append(byte_array[j])
 
-        # # append public seed
-        # for i in range(len(public_seed)):
-        #     keys['public_key'].append(public_seed[i])
+        # append public seed
+        for i in range(len(public_seed)):
+            keys['public_key'].append(public_seed[i])
         
-        # #Secret Key
-        # for i in range(self.k):
-        #     byte_array = poly_to_bytes(s[i])
-        #     for j in range(len(byte_array)):
-        #         keys['secret_key'].append(byte_array[j])
+        #Secret Key
+        for i in range(self.k):
+            byte_array = poly_to_bytes(s[i])
+            for j in range(len(byte_array)):
+                keys['secret_key'].append(byte_array[j])
 
-        # return keys
+        return keys
 
 
     def idcpa_enc(self):
@@ -155,7 +154,3 @@ class IDCPA:
 
     def idcpa_dec(self):
         pass
-
-idcpa = IDCPA()
-keys = idcpa.idcpa_gen_keypair()
-print(keys)
