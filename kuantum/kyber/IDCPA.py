@@ -1,25 +1,33 @@
 from kuantum.kyber.utils.constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAMS_Q, PARAMS_N
 from kuantum.kyber.utils.constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
 from kuantum.kyber.utils.num_type import uint16, int16, byte
-from kuantum.kyber.utils.ntt import ntt
-from kuantum.kyber.utils.poly import get_noise_poly, poly_barret_reduce, poly_montgomery_reduce, poly_add, poly_to_bytes
-from kuantum.kyber.utils.poly_vect import polyvec_pointwise_mul
+from kuantum.kyber.utils.ntt import ntt, invntt
+from kuantum.kyber.utils.poly import get_noise_poly, poly_barret_reduce, poly_montgomery_reduce, poly_add
+from kuantum.kyber.utils.poly import poly_to_bytes, poly_from_msg, poly_from_bytes
+from kuantum.kyber.utils.poly import poly_compress
+from kuantum.kyber.utils.poly_vect import polyvec_pointwise_mul, polyvec_invntt, polyvec_add, polyvec_barret_reduce
+from kuantum.kyber.utils.poly_vect import polyvec_compress
 from Crypto.Random import get_random_bytes
 from Crypto.Hash import SHA3_512, SHAKE128
+from typing import List, Dict
+
+POLYVEC_BYTES_512 = 2 * POLY_BYTES
+POLYVEC_BYTES_768 = 3 * POLY_BYTES
+POLYVEC_BYTES_1024 = 4 * POLY_BYTES
 
 
 class IDCPA:
 
-    def __init__(self, type='kyber768'):
-        self.type = type
-        if type == 'kyber512':
+    def __init__(self, level='kyber768'):
+        self.type = level
+        if level == 'kyber512':
             self.k = PARAMS_K_512
-        if type == 'kyber768':
+        if level == 'kyber768':
             self.k = PARAMS_K_768
-        if type == 'kyber1024':
+        if level == 'kyber1024':
             self.k = PARAMS_K_1024
 
-    def gen_matrix(self, seed, transposed):
+    def gen_matrix(self, seed: List[int], transposed: bool) -> List[List[int]]:
         """
         Deterministically generate matrix A (or the transpose of A)
         from a seed. Entries of the matrix are polynomials that look
@@ -60,19 +68,19 @@ class IDCPA:
         return a
 
     def idcpa_rej_uniform(self, buf, buf_len, req_len):
-        '''
+        """
          Run rejection sampling on uniform random bytes to generate uniform random integers mod q
 
          arg0: byte array
          arg1: length of byte array
          arg2: requested number of 16-bit integers
-        '''
+        """
         uniform_r = [0 for x in range(POLY_BYTES)]
         i, j = 0, 0
 
         while i < req_len and (j + 3) <= buf_len:
-            d1 = (uint16((buf[j]) >> 0) | (uint16(buf[j+1]) << 8)) & 0xFFF
-            d2 = (uint16((buf[j+1]) >> 4) | (uint16(buf[j+2]) << 4)) & 0xFFF
+            d1 = (uint16((buf[j]) >> 0) | (uint16(buf[j + 1]) << 8)) & 0xFFF
+            d2 = (uint16((buf[j + 1]) >> 4) | (uint16(buf[j + 2]) << 4)) & 0xFFF
             j += 3
             if d1 < uint16(PARAMS_Q):
                 uniform_r[i] = int16(d1)
@@ -94,17 +102,17 @@ class IDCPA:
         # generate seed, public seed and noiseseed
         seed = h.digest()
         public_seed = [seed[i] for i in range(PARAMS_SYSTEM_BYTES)]
-        noiseseed = [seed[i] for i in range(PARAMS_SYSTEM_BYTES, 2*PARAMS_SYSTEM_BYTES)]
+        noiseseed = [seed[i] for i in range(PARAMS_SYSTEM_BYTES, 2 * PARAMS_SYSTEM_BYTES)]
 
         # generate matrix A
         A = self.gen_matrix(public_seed, False)
-        s = [] # secret
-        e = [] # noise
+        s = []  # secret
+        e = []  # noise
         nonce = 0
 
         for i in range(self.k):
             s.append(get_noise_poly(noiseseed, i, self.k))
-            e.append(get_noise_poly(noiseseed, i+self.k, self.k))
+            e.append(get_noise_poly(noiseseed, i + self.k, self.k))
 
         for i in range(self.k):
             s[i] = ntt(s[i])
@@ -120,7 +128,7 @@ class IDCPA:
 
         for i in range(self.k):
             pk[i] = poly_add(pk[i], e[i])
-        
+
         for i in range(self.k):
             pk[i] = poly_barret_reduce(pk[i])
 
@@ -129,7 +137,7 @@ class IDCPA:
             'secret_key': []
         }
 
-        #Public Key
+        # Public Key
         pk_bytes = []
         for i in range(self.k):
             byte_array = poly_to_bytes(pk[i])
@@ -139,8 +147,8 @@ class IDCPA:
         # append public seed
         for i in range(len(public_seed)):
             keys['public_key'].append(public_seed[i])
-        
-        #Secret Key
+
+        # Secret Key
         for i in range(self.k):
             byte_array = poly_to_bytes(s[i])
             for j in range(len(byte_array)):
@@ -148,9 +156,56 @@ class IDCPA:
 
         return keys
 
+    def idcpa_enc(self, public_key: List[int], msg: List[int], coins: List[int]) -> List[int]:
+        """
+        Encrypt the given message using the Kyber public-key encryption scheme
 
-    def idcpa_enc(self):
+        arg0: Public Key
+        arg1: Message
+        arg2: Coins
+        """
+        pk = []
+        seed = []
+        k = poly_from_msg(msg)
+        for i in range(self.k):
+            start = i * POLY_BYTES
+            end = (i + 1) * POLY_BYTES
+            pk.append(poly_from_bytes(public_key[start, end]))
+        if self.k == 2:
+            seed = public_key[POLYVEC_BYTES_512, POLYVEC_BYTES_512 + 32]
+        elif self.k == 3:
+            seed = public_key[POLYVEC_BYTES_768, POLYVEC_BYTES_768 + 32]
+        else:
+            seed = public_key[POLYVEC_BYTES_1024, POLYVEC_BYTES_1024 + 32]
+
+        at = self.gen_matrix(seed, True)
+        sp = []
+        ep = []
+        for i in range(self.k):
+            sp.append(get_noise_poly(coins, i, self.k))
+            ep.append(get_noise_poly(coins, i+self.k, 3))
+        epp = get_noise_poly(coins, self.k * 3, 3)
+        for i in range(self.k):
+            sp[i] = ntt(sp[i])
+        for i in range(self.k):
+            sp[i] = poly_barret_reduce(sp[i])
+        bp = []
+        for i in range(self.k):
+            bp.append(polyvec_pointwise_mul(at[i], sp, self.k))
+        v = polyvec_pointwise_mul(at[i], sp, self.k)
+        bp = polyvec_invntt(bp, self.k)
+        v = invntt(v)
+        bp = polyvec_add(bp, ep, self.k)
+        v = poly_add(v, epp)
+        v = poly_add(v, k)
+        bp = polyvec_barret_reduce(bp, self.k)
+        v = poly_barret_reduce(v)
+        b_compressed = polyvec_compress(bp)
+        v_compressed = poly_compress(v, self.k)
+        return b_compressed + v_compressed
+
+
+
+    def idcpa_dec(self, cipher_text: List[int], private_key: List[int]) -> List[int]:
         pass
 
-    def idcpa_dec(self):
-        pass
