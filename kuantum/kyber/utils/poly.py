@@ -240,3 +240,21 @@ def gen_prf_byte_array(key, nonce, l):
     generated_hash = xof.read(l)
     generated_hash = [byte(x) for x in generated_hash]
     return generated_hash
+
+
+__all__ = [
+    "poly_add",
+    "poly_sub",
+    "poly_conditional_sub_q",
+    "poly_barret_reduce",
+    "poly_montgomery_reduce",
+    "poly_base_mul",
+    "poly_to_bytes",
+    "poly_from_bytes",
+    "poly_to_msg",
+    "poly_from_msg",
+    "poly_compress",
+    "poly_decompress",
+    "get_noise_poly",
+    "gen_prf_byte_array"
+]

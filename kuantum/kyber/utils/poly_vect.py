@@ -141,3 +141,16 @@ def polyvec_add(a: List[List[int]], b: List[List[int]], k: int):
     for i in range(k):
         a[i] = poly_add(a[i], b[i])
     return a
+
+
+__all__ = [
+    "polyvec_from_bytes",
+    "polyvec_compress",
+    "polyvec_decompress",
+    "polyvec_pointwise_mul",
+    "polyvec_csubq",
+    "polyvec_ntt",
+    "polyvec_invntt",
+    "polyvec_barret_reduce",
+    "polyvec_add",
+]
