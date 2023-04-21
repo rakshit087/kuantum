@@ -2,11 +2,8 @@ from kuantum.kyber.utils.constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAM
 from kuantum.kyber.utils.constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
 from kuantum.kyber.utils.num_type import uint16, int16, byte
 from kuantum.kyber.utils.ntt import ntt, invntt
-from kuantum.kyber.utils.poly import get_noise_poly, poly_barret_reduce, poly_montgomery_reduce, poly_add
-from kuantum.kyber.utils.poly import poly_to_bytes, poly_from_msg, poly_from_bytes
-from kuantum.kyber.utils.poly import poly_compress
-from kuantum.kyber.utils.poly_vect import polyvec_pointwise_mul, polyvec_invntt, polyvec_add, polyvec_barret_reduce
-from kuantum.kyber.utils.poly_vect import polyvec_compress
+from kuantum.kyber.utils.poly import *
+from kuantum.kyber.utils.poly_vect import *
 from Crypto.Random import get_random_bytes
 from Crypto.Hash import SHA3_512, SHAKE128
 from typing import List, Dict
@@ -91,7 +88,12 @@ class IDCPA:
 
         return uniform_r, i
 
-    def idcpa_gen_keypair(self):
+    def idcpa_gen_keypair(self) -> Dict:
+        """
+        Generate public and private key for the ID-CPA scheme
+
+        Returns: public key, private key
+        """
         # random bytes for seed
         rnd = get_random_bytes(PARAMS_SYSTEM_BYTES)
 
@@ -138,7 +140,6 @@ class IDCPA:
         }
 
         # Public Key
-        pk_bytes = []
         for i in range(self.k):
             byte_array = poly_to_bytes(pk[i])
             for j in range(len(byte_array)):
@@ -165,7 +166,6 @@ class IDCPA:
         arg2: Coins
         """
         pk = []
-        seed = []
         k = poly_from_msg(msg)
         for i in range(self.k):
             start = i * POLY_BYTES
@@ -183,7 +183,7 @@ class IDCPA:
         ep = []
         for i in range(self.k):
             sp.append(get_noise_poly(coins, i, self.k))
-            ep.append(get_noise_poly(coins, i+self.k, 3))
+            ep.append(get_noise_poly(coins, i + self.k, 3))
         epp = get_noise_poly(coins, self.k * 3, 3)
         for i in range(self.k):
             sp[i] = ntt(sp[i])
@@ -204,8 +204,26 @@ class IDCPA:
         v_compressed = poly_compress(v, self.k)
         return b_compressed + v_compressed
 
-
-
     def idcpa_dec(self, cipher_text: List[int], private_key: List[int]) -> List[int]:
-        pass
+        """
+        Decrypt the given cipher text using the Kyber public-key encryption scheme
 
+        arg0: Cipher Text
+        arg1: Private Key
+        """
+        if self.k == 2:
+            bp = polyvec_decompress(cipher_text[0: 640], self.k)
+            v = poly_decompress(cipher_text[640, 768], self.k)
+        elif self.k == 3:
+            bp = polyvec_decompress(cipher_text[0: 960], self.k)
+            v = poly_decompress(cipher_text[960, 1088], self.k)
+        else:
+            bp = polyvec_decompress(cipher_text[0: 1408], self.k)
+            v = poly_decompress(cipher_text[1408, 1568], self.k)
+        private_key_polyvec = polyvec_from_bytes(private_key, self.k)
+        bp = polyvec_ntt(bp)
+        mp = polyvec_pointwise_mul(private_key_polyvec, bp, self.k)
+        mp = invntt(mp)
+        mp = poly_sub(v, mp)
+        mp = poly_barret_reduce(mp)
+        return poly_to_msg(mp)
