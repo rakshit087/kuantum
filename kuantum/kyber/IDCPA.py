@@ -170,13 +170,13 @@ class IDCPA:
         for i in range(self.k):
             start = i * POLY_BYTES
             end = (i + 1) * POLY_BYTES
-            pk.append(poly_from_bytes(public_key[start, end]))
+            pk.append(poly_from_bytes(public_key[start: end]))
         if self.k == 2:
-            seed = public_key[POLYVEC_BYTES_512, POLYVEC_BYTES_512 + 32]
+            seed = public_key[POLYVEC_BYTES_512: POLYVEC_BYTES_512 + 32]
         elif self.k == 3:
-            seed = public_key[POLYVEC_BYTES_768, POLYVEC_BYTES_768 + 32]
+            seed = public_key[POLYVEC_BYTES_768: POLYVEC_BYTES_768 + 32]
         else:
-            seed = public_key[POLYVEC_BYTES_1024, POLYVEC_BYTES_1024 + 32]
+            seed = public_key[POLYVEC_BYTES_1024: POLYVEC_BYTES_1024 + 32]
 
         at = self.gen_matrix(seed, True)
         sp = []
@@ -192,7 +192,7 @@ class IDCPA:
         bp = []
         for i in range(self.k):
             bp.append(polyvec_pointwise_mul(at[i], sp, self.k))
-        v = polyvec_pointwise_mul(at[i], sp, self.k)
+        v = polyvec_pointwise_mul(pk, sp, self.k)
         bp = polyvec_invntt(bp, self.k)
         v = invntt(v)
         bp = polyvec_add(bp, ep, self.k)
@@ -200,7 +200,7 @@ class IDCPA:
         v = poly_add(v, k)
         bp = polyvec_barret_reduce(bp, self.k)
         v = poly_barret_reduce(v)
-        b_compressed = polyvec_compress(bp)
+        b_compressed = polyvec_compress(bp, self.k)
         v_compressed = poly_compress(v, self.k)
         return b_compressed + v_compressed
 
@@ -213,13 +213,13 @@ class IDCPA:
         """
         if self.k == 2:
             bp = polyvec_decompress(cipher_text[0: 640], self.k)
-            v = poly_decompress(cipher_text[640, 768], self.k)
+            v = poly_decompress(cipher_text[640: 768], self.k)
         elif self.k == 3:
             bp = polyvec_decompress(cipher_text[0: 960], self.k)
-            v = poly_decompress(cipher_text[960, 1088], self.k)
+            v = poly_decompress(cipher_text[960: 1088], self.k)
         else:
             bp = polyvec_decompress(cipher_text[0: 1408], self.k)
-            v = poly_decompress(cipher_text[1408, 1568], self.k)
+            v = poly_decompress(cipher_text[1408: 1568], self.k)
         private_key_polyvec = polyvec_from_bytes(private_key, self.k)
         bp = polyvec_ntt(bp)
         mp = polyvec_pointwise_mul(private_key_polyvec, bp, self.k)
