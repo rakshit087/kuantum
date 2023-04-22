@@ -25,9 +25,6 @@ def polyvec_to_bytes(a):
 
 def polyvec_compress(a, k):
     rr = 0
-    r = []
-    t = [0 for _ in range(8)]
-
     if k == 2:
         r = [0 for _ in range(POLYVEC_COMPRESSED_BYTES_512)]
     elif k == 3:
@@ -40,7 +37,7 @@ def polyvec_compress(a, k):
         for i in range(k):
             for j in range(PARAMS_N // 4):
                 for k in range(4):
-                    t[k] = uint16((((uint32(a[i][4 * j + k]) << 10) + uint32(PARAMS_Q / 2)) / uint32(PARAMS_Q)) & 0x3ff)
+                    t[k] = uint16((((uint32(a[i][4 * j + k]) << 10) + uint32(PARAMS_Q // 2)) // uint32(PARAMS_Q)) & 0x3ff)
                 r[rr + 0] = byte(t[0] >> 0)
                 r[rr + 1] = byte((t[0] >> 8) | (t[1] << 2))
                 r[rr + 2] = byte((t[1] >> 6) | (t[2] << 4))

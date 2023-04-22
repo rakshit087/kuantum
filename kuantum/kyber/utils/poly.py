@@ -167,7 +167,7 @@ def poly_compress(a, k):
         r = [0 for _ in range(COMPRESSED_BYTES_512)]
         for i in range(PARAMS_N // 8):
             for j in range(8):
-                t[j] = byte(((uint16(a[8 * i + j]) << 4) + uint16(PARAMS_Q / 2)) / uint16(PARAMS_Q)) & 15
+                t[j] = byte(((uint16(a[8 * i + j]) << 4) + uint16(PARAMS_Q // 2)) // uint16(PARAMS_Q)) & 15
             r[rr + 0] = byte(t[0] | (t[1] << 4))
             r[rr + 1] = byte(t[2] | (t[3] << 4))
             r[rr + 2] = byte(t[4] | (t[5] << 4))
@@ -177,7 +177,7 @@ def poly_compress(a, k):
         r = [0 for _ in range(COMPRESSED_BYTES_1024)]
         for i in range(PARAMS_N // 8):
             for j in range(8):
-                t[j] = byte(((uint32(a[8 * i + j]) << 5) + uint32(PARAMS_Q / 2)) / uint32(PARAMS_Q)) & 31
+                t[j] = byte(((uint32(a[8 * i + j]) << 5) + uint32(PARAMS_Q // 2)) // uint32(PARAMS_Q)) & 31
             r[rr + 0] = (t[0] >> 0) | (t[1] << 5)
             r[rr + 1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7)
             r[rr + 2] = (t[3] >> 1) | (t[4] << 4)
@@ -220,7 +220,6 @@ def poly_decompress(a, k):
 
 
 def get_noise_poly(seed, nonce, k):
-    l = 0
     if k == 2:
         l = PARAMS_N * PARAMS_ETA_1 // 4
     else:
