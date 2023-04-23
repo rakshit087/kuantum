@@ -1,6 +1,6 @@
 from kuantum.kyber.utils.constants import NTT_ZETAS, NTT_ZETAS_INV
 from kuantum.kyber.utils.reduce import montgomery_reduce, barrett_reduce
-
+import numpy as np
 
 def ntt(r):
     '''
@@ -76,7 +76,7 @@ def base_multiplier(a0, a1, b0, b1, zeta):
     r = [ 0 for x in range(0,2)]
     r[0] = montgomery_reduce(a1 * b1)
     r[0] = montgomery_reduce(r[0] * zeta)
-    r[0] = r[0] + montgomery_reduce(a0 * b0)
+    r[0] = np.int16(r[0] + montgomery_reduce(a0 * b0))
     r[1] = montgomery_reduce(a0 * b1)
-    r[1] = r[1] + montgomery_reduce(a1 * b0)
+    r[1] = np.int16(r[1] + montgomery_reduce(a1 * b0))
     return r
