@@ -4,6 +4,7 @@ from kuantum.kyber.utils.poly import poly_barret_reduce, poly_from_bytes, poly_c
     poly_base_mul
 from kuantum.kyber.utils.ntt import invntt, ntt
 from typing import List
+import numpy as np
 
 POLYVEC_COMPRESSED_BYTES_512 = 640
 POLYVEC_COMPRESSED_BYTES_768 = 960
@@ -73,28 +74,28 @@ def polyvec_decompress(a, k):
         t = [0 for x in range(4)]
         for i in range(k):
             for j in range(PARAMS_N // 4):
-                t[0] = (uint16(a[aa + 0]) >> 0) | (uint16(a[aa + 1]) << 8)
-                t[1] = (uint16(a[aa + 1]) >> 2) | (uint16(a[aa + 2]) << 6)
-                t[2] = (uint16(a[aa + 2]) >> 4) | (uint16(a[aa + 3]) << 4)
-                t[3] = (uint16(a[aa + 3]) >> 6) | (uint16(a[aa + 4]) << 2)
+                t[0] = ((a[aa + 0] & 0xFF) >> 0) | ((a[aa + 1] & 0xFF) << 8)
+                t[1] = ((a[aa + 1] & 0xFF) >> 2) | ((a[aa + 2] & 0xFF) << 6)
+                t[2] = ((a[aa + 2] & 0xFF) >> 4) | ((a[aa + 3] & 0xFF) << 4)
+                t[3] = ((a[aa + 3] & 0xFF) >> 6) | ((a[aa + 4] & 0xFF) << 2)
                 aa = aa + 5
                 for k in range(4):
-                    r[i][4 * j + k] = int16((uint32(t[k] & 0x3FF) * uint32(PARAMS_Q) + 512) >> 10)
+                    r[i][4 * j + k] = int16 ((np.int64 (t[k] & 0x3FF) * np.int64 (PARAMS_Q) + 512) >> 10)
     else:
         t = [0 for x in range(4)]
         for i in range(k):
             for j in range(PARAMS_N // 8):
-                t[0] = (uint16(a[aa + 0]) >> 0) | (uint16(a[aa + 1]) << 8)
-                t[1] = (uint16(a[aa + 1]) >> 3) | (uint16(a[aa + 2]) << 5)
-                t[2] = (uint16(a[aa + 2]) >> 6) | (uint16(a[aa + 3]) << 2) | (uint16(a[aa + 4]) << 10)
-                t[3] = (uint16(a[aa + 4]) >> 1) | (uint16(a[aa + 5]) << 7)
-                t[4] = (uint16(a[aa + 5]) >> 4) | (uint16(a[aa + 6]) << 4)
-                t[5] = (uint16(a[aa + 6]) >> 7) | (uint16(a[aa + 7]) << 1) | (uint16(a[aa + 8]) << 9)
-                t[6] = (uint16(a[aa + 8]) >> 2) | (uint16(a[aa + 9]) << 6)
-                t[7] = (uint16(a[aa + 9]) >> 5) | (uint16(a[aa + 10]) << 3)
+                t[0] = (((a[aa + 0] & 0xff) >> 0) | ((a[aa + 1] & 0xff) << 8))
+                t[1] = (((a[aa + 1] & 0xff) >> 3) | ((a[aa + 2] & 0xff) << 5))
+                t[2] = (((a[aa + 2] & 0xff) >> 6) | ((a[aa + 3] & 0xff) << 2) | ((a[aa + 4] & 0xff) << 10))
+                t[3] = (((a[aa + 4] & 0xff) >> 1) | ((a[aa + 5] & 0xff) << 7))
+                t[4] = (((a[aa + 5] & 0xff) >> 4) | ((a[aa + 6] & 0xff) << 4))
+                t[5] = (((a[aa + 6] & 0xff) >> 7) | ((a[aa + 7] & 0xff) << 1) | ((a[aa + 8] & 0xff) << 9))
+                t[6] = (((a[aa + 8] & 0xff) >> 2) | ((a[aa + 9] & 0xff) << 6))
+                t[7] = (((a[aa + 9] & 0xff) >> 5) | ((a[aa + 10] & 0xff) << 3))
                 aa = aa + 11
                 for k in range(8):
-                    r[i][8 * j + k] = int16((uint32(t[k] & 0x7FF) * uint32(PARAMS_Q) + 1024) >> 11)
+                    r[i][8 * j + k] = int16((np.long64(t[k] & 0x7FF) * np.long64 (PARAMS_Q) + 1024) >> 11)
     return r
 
 
