@@ -12,6 +12,14 @@ POLYVEC_BYTES_512 = 2 * POLY_BYTES
 POLYVEC_BYTES_768 = 3 * POLY_BYTES
 POLYVEC_BYTES_1024 = 4 * POLY_BYTES
 
+POLY_COMPRESSED_BYTES_512 = 128
+POLY_COMPRESSED_BYTES_768 = 128
+POLY_COMPRESSED_BYTES_1024 = 160
+
+POLYVEC_COMPRESSED_BYTES_512 = 320 * 2
+POLYVEC_COMPRESSED_BYTES_768 = 320 * 3
+POLYVEC_COMPRESSED_BYTES_1024 = 352 * 4
+
 
 class IDCPA:
 
@@ -212,16 +220,20 @@ class IDCPA:
         arg1: Private Key
         """
         if self.k == 2:
-            bp = polyvec_decompress(cipher_text[0: 640], self.k)
-            v = poly_decompress(cipher_text[640: 768], self.k)
+            bp_end_index = POLYVEC_COMPRESSED_BYTES_512
+            v_end_index = bp_end_index + POLY_COMPRESSED_BYTES_512
         elif self.k == 3:
-            bp = polyvec_decompress(cipher_text[0: 960], self.k)
-            v = poly_decompress(cipher_text[960: 1088], self.k)
+            bp_end_index = POLYVEC_COMPRESSED_BYTES_768
+            v_end_index = bp_end_index + POLY_COMPRESSED_BYTES_768
         else:
-            bp = polyvec_decompress(cipher_text[0: 1408], self.k)
-            v = poly_decompress(cipher_text[1408: 1568], self.k)
+            bp_end_index = POLYVEC_COMPRESSED_BYTES_1024
+            v_end_index = bp_end_index + POLY_COMPRESSED_BYTES_1024
+
+        bp = polyvec_decompress(cipher_text[:bp_end_index], self.k)
+        v = poly_decompress(cipher_text[bp_end_index: v_end_index], self.k)
+
         private_key_polyvec = polyvec_from_bytes(private_key, self.k)
-        bp = polyvec_ntt(bp)
+        bp = polyvec_ntt(bp, self.k)
         mp = polyvec_pointwise_mul(private_key_polyvec, bp, self.k)
         mp = invntt(mp)
         mp = poly_sub(v, mp)

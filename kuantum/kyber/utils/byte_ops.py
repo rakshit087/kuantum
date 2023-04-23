@@ -3,11 +3,11 @@ from kuantum.kyber.utils.constants import PARAMS_N, PARAMS_ETA_1, PARAMS_ETA_2, 
 
 
 def load24_bit(x):
-    '''
+    """
     load 3 bytes into a 32-bit integer needed for Kyber 512
     arg0: input byte array
-    return:  32-bit unsigned integer 
-    '''
+    return:  32-bit unsigned integer
+    """
     r = x[0] & 0xff
     r |= (x[1] & 0xff) << 8
     r |= (x[2] & 0xff) << 16
@@ -15,13 +15,13 @@ def load24_bit(x):
 
 
 def load32_bit(x):
-    '''
-    load 4 bytes into a 32-bit integer needed for Kyber 768 
+    """
+    load 4 bytes into a 32-bit integer needed for Kyber 768
     and Kyber 1024
-    
+
     arg0: input byte array
     return:  32-bit unsigned integer
-    '''
+    """
     r = x[0] & 0xff # to mask negative values
     r |= (x[1] & 0xff) << 8
     r |= (x[2] & 0xff) << 16
@@ -30,15 +30,15 @@ def load32_bit(x):
 
 
 def gen_cbd_pol(buff, eta):
-    '''
+    """
     compute polynomial with coefficients distributed according to
-    a centered binomial distribution 
+    a centered binomial distribution
 
     arg0: array of uniformly random bytes
     arg1: eta = 2 for Kyber 512 and eta = 3 Kyber 768 / Kyber 1024
-    
+
     return: array with coefficients
-    '''
+    """
     r = [0 for i in range(POLY_BYTES)]
     if eta == 2:
         for i in range(0, PARAMS_N // 4):

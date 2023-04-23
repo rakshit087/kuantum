@@ -2,6 +2,7 @@ from kuantum.kyber.utils.constants import NTT_ZETAS, NTT_ZETAS_INV
 from kuantum.kyber.utils.reduce import montgomery_reduce, barrett_reduce
 import numpy as np
 
+
 def ntt(r):
     '''
     Inplace number-theoretic transform (NTT) in Rq.
@@ -33,14 +34,15 @@ def ntt(r):
         l >>= 1
     return r
 
+
 def invntt(r):
-    '''
+    """
     Inplace inverse number-theoretic transform in Rq and
     multiplication by Montgomery factor 2^16.
 
-    arg0: bitinverse array of 16 bit integers
-    return: standard array of 16 bit integers
-    '''
+    arg0: bit-inverse array of 16-bit integers
+    return: standard array of 16-bit integers
+    """
     j = 0
     k = 0
     l = 2
@@ -52,19 +54,20 @@ def invntt(r):
             j = start
             while j < (start + l):
                 t = r[j]
-                t_rjl = t + r[j+l]
+                t_rjl = t + r[j + l]
                 r[j] = barrett_reduce(t_rjl)
-                r[j+l] = t - r[j+l]
-                r[j+l] = montgomery_reduce(zeta * r[j+l])
+                r[j + l] = t - r[j + l]
+                r[j + l] = montgomery_reduce(zeta * r[j + l])
                 j += 1
             start = j + l
         l <<= 1
-    for j in range(0,256):
+    for j in range(0, 256):
         r[j] = montgomery_reduce(r[j] * NTT_ZETAS_INV[127])
     return r
 
+
 def base_multiplier(a0, a1, b0, b1, zeta):
-    '''
+    """
     Multiplication of polynomials in Zq[X]/(X^2-zeta)
     used for multiplication of elements in Rq in NTT domain
 
@@ -72,8 +75,8 @@ def base_multiplier(a0, a1, b0, b1, zeta):
     arg1: first factor
     arg2: second factor
     arg3: integer defining the reduction polynomial
-    '''
-    r = [ 0 for x in range(0,2)]
+    """
+    r = [0 for x in range(0, 2)]
     r[0] = montgomery_reduce(a1 * b1)
     r[0] = montgomery_reduce(r[0] * zeta)
     r[0] = np.int16(r[0] + montgomery_reduce(a0 * b0))
