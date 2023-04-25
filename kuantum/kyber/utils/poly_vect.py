@@ -1,8 +1,8 @@
 from kuantum.kyber.utils.constants import POLY_BYTES, PARAMS_N, PARAMS_Q
-from kuantum.kyber.utils.num_type import uint16, uint32, int16, byte
+from kuantum.kyber.utils.num_type import uint16, uint32, int16, byte, long64
 from kuantum.kyber.utils.poly import poly_barret_reduce, poly_from_bytes, poly_conditional_sub_q, poly_add, \
     poly_base_mul
-from kuantum.kyber.utils.ntt import invntt, ntt
+from kuantum.kyber.utils.ntt import inv_ntt, ntt
 from typing import List
 import numpy as np
 
@@ -80,7 +80,7 @@ def polyvec_decompress(a, k):
                 t[3] = ((a[aa + 3] & 0xFF) >> 6) | ((a[aa + 4] & 0xFF) << 2)
                 aa = aa + 5
                 for k in range(4):
-                    r[i][4 * j + k] = int16 ((np.int64 (t[k] & 0x3FF) * np.int64 (PARAMS_Q) + 512) >> 10)
+                    r[i][4 * j + k] = int16 (( (t[k] & 0x3FF) *  (PARAMS_Q) + 512) >> 10)
     else:
         t = [0 for x in range(4)]
         for i in range(k):
@@ -95,7 +95,7 @@ def polyvec_decompress(a, k):
                 t[7] = (((a[aa + 9] & 0xff) >> 5) | ((a[aa + 10] & 0xff) << 3))
                 aa = aa + 11
                 for k in range(8):
-                    r[i][8 * j + k] = int16((np.long64(t[k] & 0x7FF) * np.long64 (PARAMS_Q) + 1024) >> 11)
+                    r[i][8 * j + k] = int16((long64(t[k] & 0x7FF) * long64 (PARAMS_Q) + 1024) >> 11)
     return r
 
 
@@ -125,7 +125,7 @@ def polyvec_ntt(a, k):
 
 def polyvec_invntt(a, k):
     for i in range(k):
-        a[i] = invntt(a[i])
+        a[i] = inv_ntt(a[i])
     return a
 
 

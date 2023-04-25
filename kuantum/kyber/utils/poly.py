@@ -1,6 +1,6 @@
 from kuantum.kyber.utils.constants import PARAMS_N, PARAMS_Q, NTT_ZETAS, PARAMS_ETA_1, PARAMS_ETA_2
 from kuantum.kyber.utils.constants import COMPRESSED_BYTES_512, COMPRESSED_BYTES_1024, POLY_BYTES
-from kuantum.kyber.utils.num_type import int16, uint16, int32, uint32, byte
+from kuantum.kyber.utils.num_type import int16, uint16, int32, long64, byte
 from kuantum.kyber.utils.reduce import barrett_reduce, montgomery_reduce
 from kuantum.kyber.utils.ntt import base_multiplier
 from kuantum.kyber.utils.byte_ops import gen_cbd_pol
@@ -38,7 +38,7 @@ def poly_conditional_sub_q(r):
     arg0: polynomial
     """
     for i in range(PARAMS_N):
-        r[i] = np.int16(r[i] - PARAMS_Q)
+        r[i] = int16(r[i] - PARAMS_Q)
         r[i] = int16(r[i] + int32(int32(r[i] >> 15) & PARAMS_Q))
     return r
 
@@ -61,7 +61,7 @@ def poly_montgomery_reduce(r):
     arg0: polynomial
     """
     for i in range(PARAMS_N):
-        r[i] = montgomery_reduce(np.int64(r[i]*1353))
+        r[i] = montgomery_reduce(long64(r[i]*1353))
     return r
 
 
@@ -167,13 +167,13 @@ def poly_compress(a, k):
         r = [0 for _ in range(COMPRESSED_BYTES_512)]
         for i in range(PARAMS_N // 8):
             for j in range(8):
-                temp1 = np.int32(a[8 * i + j] << 4)
-                temp2 = np.int32((temp1 + (PARAMS_Q // 2)) // PARAMS_Q)
-                t[j] = np.byte(temp2 & 15)
-            r[rr + 0] = np.byte(t[0] | (t[1] << 4))
-            r[rr + 1] = np.byte(t[2] | (t[3] << 4))
-            r[rr + 2] = np.byte(t[4] | (t[5] << 4))
-            r[rr + 3] = np.byte(t[6] | (t[7] << 4))
+                temp1 = int32(a[8 * i + j] << 4)
+                temp2 = int32((temp1 + (PARAMS_Q // 2)) // PARAMS_Q)
+                t[j] = byte(temp2 & 15)
+            r[rr + 0] = byte(t[0] | (t[1] << 4))
+            r[rr + 1] = byte(t[2] | (t[3] << 4))
+            r[rr + 2] = byte(t[4] | (t[5] << 4))
+            r[rr + 3] = byte(t[6] | (t[7] << 4))
             rr = rr + 4
     else:
         r = [0 for _ in range(COMPRESSED_BYTES_1024)]
@@ -209,17 +209,17 @@ def poly_decompress(a, k):
             aa += 1
     else:
         for i in range(PARAMS_N // 8):
-            t[0] = np.int64(int32(a[aa + 0] & 0xFF) >> 0) & 0xFF
-            t[1] = np.int64(np.byte((int32(a[aa + 0] & 0xFF) >> 5)) | byte(int32(a[aa + 1] & 0xFF) << 3)) & 0xFF
-            t[2] = np.int64(int32(a[aa + 1] & 0xFF) >> 2) & 0xFF
-            t[3] = np.int64(byte((int32(a[aa + 1] & 0xFF) >> 7)) | byte(int32(a[aa + 2] & 0xFF) << 1)) & 0xFF
-            t[4] = np.int64(byte((int32(a[aa + 2] & 0xFF) >> 4)) | byte(int32(a[aa + 3] & 0xFF) << 4)) & 0xFF
-            t[5] = np.int64(int32(a[aa + 3] & 0xFF) >> 1) & 0xFF
-            t[6] = np.int64(byte((int32(a[aa + 3] & 0xFF) >> 6)) | byte(int32(a[aa + 4] & 0xFF) << 2)) & 0xFF
-            t[7] = (np.int64(int32(a[aa + 4] & 0xFF) >> 3)) & 0xFF
+            t[0] = long64(int32(a[aa + 0] & 0xFF) >> 0) & 0xFF
+            t[1] = long64(byte((int32(a[aa + 0] & 0xFF) >> 5)) | byte(int32(a[aa + 1] & 0xFF) << 3)) & 0xFF
+            t[2] = long64(int32(a[aa + 1] & 0xFF) >> 2) & 0xFF
+            t[3] = long64(byte((int32(a[aa + 1] & 0xFF) >> 7)) | byte(int32(a[aa + 2] & 0xFF) << 1)) & 0xFF
+            t[4] = long64(byte((int32(a[aa + 2] & 0xFF) >> 4)) | byte(int32(a[aa + 3] & 0xFF) << 4)) & 0xFF
+            t[5] = long64(int32(a[aa + 3] & 0xFF) >> 1) & 0xFF
+            t[6] = long64(byte((int32(a[aa + 3] & 0xFF) >> 6)) | byte(int32(a[aa + 4] & 0xFF) << 2)) & 0xFF
+            t[7] = (long64(int32(a[aa + 4] & 0xFF) >> 3)) & 0xFF
             aa = aa + 5
             for j in range(0, 8):
-                r[8 * i + j] = int16(((np.int64(t[j] & 31) * (PARAMS_Q)) + 16) >> 5)
+                r[8 * i + j] = int16(((long64(t[j] & 31) * (PARAMS_Q)) + 16) >> 5)
     return r
 
 
