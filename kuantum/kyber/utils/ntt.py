@@ -1,17 +1,17 @@
-from kuantum.kyber.utils.constants import NTT_ZETAS, NTT_ZETAS_INV
+from kuantum.kyber.utils.num_type import  int16, int32
 from kuantum.kyber.utils.reduce import montgomery_reduce, barrett_reduce
+from kuantum.kyber.utils.constants import NTT_ZETAS, NTT_ZETAS_INV
 import numpy as np
 
 
 def ntt(r):
-    '''
+    """
     Inplace number-theoretic transform (NTT) in Rq.
-    input is in standard order, output is in bitreversed order
+    input is in standard order, output is in a bit reversed order
 
-    arg0: array of 16 bit integers
-    return: bitinverse array of 16 bit integers
-    '''
-    j = 0
+    arg0: array of 16-bit integers
+    return: bit-inverse array of 16-bit integers
+    """
     k = 1
     l = 128
     # 128, 64, 32, 16, 8, 4, 2
@@ -26,16 +26,16 @@ def ntt(r):
                 # compute the modular multiplication of the zeta and each element in the subsection
                 t = montgomery_reduce(zeta * r[j + l])
                 # overwrite each element in the subsection as the opposite subsection element minus t
-                r[j + l] = r[j] - t
+                r[j + l] = int16(r[j] - t)
                 # add t back again to the opposite subsection
-                r[j] = r[j] + t
+                r[j] = int16(r[j] + t)
                 j += 1
             start = j + l
         l >>= 1
     return r
 
 
-def invntt(r):
+def inv_ntt(r):
     """
     Inplace inverse number-theoretic transform in Rq and
     multiplication by Montgomery factor 2^16.
@@ -43,7 +43,6 @@ def invntt(r):
     arg0: bit-inverse array of 16-bit integers
     return: standard array of 16-bit integers
     """
-    j = 0
     k = 0
     l = 2
     while l <= 128:
@@ -54,9 +53,9 @@ def invntt(r):
             j = start
             while j < (start + l):
                 t = r[j]
-                t_rjl = t + r[j + l]
+                t_rjl = int16(t + r[j + l])
                 r[j] = barrett_reduce(t_rjl)
-                r[j + l] = t - r[j + l]
+                r[j + l] = int16(t - r[j + l])
                 r[j + l] = montgomery_reduce(zeta * r[j + l])
                 j += 1
             start = j + l
@@ -76,10 +75,10 @@ def base_multiplier(a0, a1, b0, b1, zeta):
     arg2: second factor
     arg3: integer defining the reduction polynomial
     """
-    r = [0 for x in range(0, 2)]
+    r = [0 for _ in range(0, 2)]
     r[0] = montgomery_reduce(a1 * b1)
     r[0] = montgomery_reduce(r[0] * zeta)
-    r[0] = np.int16(r[0] + montgomery_reduce(a0 * b0))
+    r[0] = int16(r[0] + montgomery_reduce(a0 * b0))
     r[1] = montgomery_reduce(a0 * b1)
-    r[1] = np.int16(r[1] + montgomery_reduce(a1 * b0))
+    r[1] = int16(r[1] + montgomery_reduce(a1 * b0))
     return r

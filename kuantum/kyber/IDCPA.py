@@ -1,7 +1,7 @@
 from kuantum.kyber.utils.constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAMS_Q, PARAMS_N
 from kuantum.kyber.utils.constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
 from kuantum.kyber.utils.num_type import uint16, int16, byte
-from kuantum.kyber.utils.ntt import ntt, invntt
+from kuantum.kyber.utils.ntt import ntt, inv_ntt
 from kuantum.kyber.utils.poly import *
 from kuantum.kyber.utils.poly_vect import *
 from Crypto.Random import get_random_bytes
@@ -202,7 +202,7 @@ class IDCPA:
             bp.append(polyvec_pointwise_mul(at[i], sp, self.k))
         v = polyvec_pointwise_mul(pk, sp, self.k)
         bp = polyvec_invntt(bp, self.k)
-        v = invntt(v)
+        v = inv_ntt(v)
         bp = polyvec_add(bp, ep, self.k)
         v = poly_add(v, epp)
         v = poly_add(v, k)
@@ -235,7 +235,7 @@ class IDCPA:
         private_key_polyvec = polyvec_from_bytes(private_key, self.k)
         bp = polyvec_ntt(bp, self.k)
         mp = polyvec_pointwise_mul(private_key_polyvec, bp, self.k)
-        mp = invntt(mp)
+        mp = inv_ntt(mp)
         mp = poly_sub(v, mp)
         mp = poly_barret_reduce(mp)
         return poly_to_msg(mp)
