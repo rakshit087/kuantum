@@ -22,14 +22,14 @@ def load32_bit(x):
     arg0: input byte array
     return:  32-bit unsigned integer
     """
-    r = x[0] & 0xff # to mask negative values
+    r = x[0] & 0xff  # to mask negative values
     r |= (x[1] & 0xff) << 8
     r |= (x[2] & 0xff) << 16
     r |= (x[3] & 0xff) << 24
     return r
 
 
-def gen_cbd_pol(buff, eta):
+def gen_cbd_pol(buff, k):
     """
     compute polynomial with coefficients distributed according to
     a centered binomial distribution
@@ -39,17 +39,17 @@ def gen_cbd_pol(buff, eta):
 
     return: array with coefficients
     """
-    r = [0 for i in range(POLY_BYTES)]
-    if eta == 2:
+    r = [0 for _ in range(0, POLY_BYTES)]
+    if k == 2:
         for i in range(0, PARAMS_N // 4):
             t = load24_bit(buff[3 * i:])
             d = t & 0x00249249
-            d += ((t >> 1) & 0x00249249)
-            d += ((t >> 2) & 0x00249249)
+            d = d + ((t >> 1) & 0x00249249)
+            d = d + ((t >> 2) & 0x00249249)
             for j in range(0, 4):
-                a = (d >> (6 * j + 0)) & 0x7
-                b = (d >> (6 * j + PARAMS_ETA_1)) & 0x7
-                r[4 * i + j] = a - b
+                a = ((d >> (6 * j + 0)) & 0x7)
+                b = ((d >> (6 * j + PARAMS_ETA_1)) & 0x7)
+                r[4 * i + j] = (a - b)
     else:
         for i in range(0, PARAMS_N // 8):
             t = load32_bit(buff[4 * i:])
