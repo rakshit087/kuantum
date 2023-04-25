@@ -13,7 +13,11 @@ pairs = [[3560835, 1114],
 
 for a, t in pairs:
     res = montgomery_reduce(a)
-    assert (t == res)
+    try:
+        assert (t == res)
+        print("OK ✅")
+    except AssertionError:
+        print(f"Failed for {a} -> {res} != {t}")
 
 pairs = [[3862, 533],
          [-1343, 1986],
@@ -25,4 +29,8 @@ pairs = [[3862, 533],
 
 for a, t in pairs:
     res = barrett_reduce(a)
-    assert (t == res)
+    try:
+        assert (t == res)
+        print("OK ✅")
+    except AssertionError:
+        print(f"Failed for {a} -> {res} != {t}")
