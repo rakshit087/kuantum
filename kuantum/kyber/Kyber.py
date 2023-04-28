@@ -1,6 +1,6 @@
 from kuantum.kyber.utils.constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024, POLY_BYTES
 from kuantum.kyber.utils.num_type import uint16, int16, byte
-from IDCPA import IDCPA
+from kuantum.kyber.IDCPA import IDCPA
 from Crypto.Hash import SHA3_256, SHA3_512, SHAKE256
 from Crypto.Random import get_random_bytes
 
@@ -100,6 +100,8 @@ class Kyber:
         }
 
     def decrypt(self, cipher_text, private_key):
+        idcpa_private_key = None
+        idcpa_public_key = None
         if self.k == 2:
             idcpa_private_key = private_key[0: IDCPA_SK_BYTES_512]
             idcpa_public_key = private_key[IDCPA_SK_BYTES_512:IDCPA_SK_BYTES_512 + IDCPA_PK_BYTES_512]
@@ -148,15 +150,3 @@ class Kyber:
         md_shake.update(bytearray([x & 0xff for x in temp_buf]))
         shared_secret = md_shake.read(32)
         return [byte(x) for x in shared_secret]
-
-
-kyber = Kyber('kyber768')
-keys = kyber.gen_keypair()
-pk = keys['public_key']
-sk = keys['secret_key']
-result = kyber.encrypt(pk)
-ct2 = result['ciphertext']
-ss = result['shared_secret']
-ss2 = kyber.decrypt(ct2, sk)
-print(ss == ss2)
-

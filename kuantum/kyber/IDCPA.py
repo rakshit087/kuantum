@@ -1,6 +1,6 @@
 from kuantum.kyber.utils.constants import PARAMS_SYSTEM_BYTES, POLY_BYTES, PARAMS_Q, PARAMS_N
 from kuantum.kyber.utils.constants import PARAMS_K_512, PARAMS_K_768, PARAMS_K_1024
-from kuantum.kyber.utils.num_type import uint16, int16, byte
+from kuantum.kyber.utils.num_type import uint16, int16, byte, int32
 from kuantum.kyber.utils.ntt import ntt, inv_ntt
 from kuantum.kyber.utils.poly import *
 from kuantum.kyber.utils.poly_vect import *
@@ -42,34 +42,30 @@ class IDCPA:
         arg0: seed
         arg1: boolean deciding whether A or A^T is generated
         """
-        a = [[[0 for x in range(0, POLY_BYTES)]
-              for y in range(0, self.k)] for z in range(0, self.k)]
-        ctr = 0
+        a = [[[ 0 for _ in range(POLY_BYTES)] for _ in range(self.k)] for _ in range(self.k)]
         for i in range(self.k):
-            transpose = [0, 0]
+            a[i] = [[ 0 for x in range(0, POLY_BYTES) ] for y in range(0, self.k)]
             for j in range(self.k):
                 xof = SHAKE128.new()
-                transpose[0] = byte(i)
-                transpose[1] = byte(j)
-                if transposed:
-                    transpose[0] = byte(j)
-                    transpose[1] = byte(i)
                 seed_unsigned = [x & 0xff for x in seed]
-                xof.update(bytearray(seed_unsigned)).update(bytearray(transpose))
+                xof.update(bytearray(seed_unsigned))
+                ij = [0, 0]
+                if transposed:
+                    ij[0] = byte(i)
+                    ij[1] = byte(j)
+                else:
+                    ij[0] = byte(j)
+                    ij[1] = byte(i)
+                xof.update(bytearray(ij))
                 buf = xof.read(672)
                 buf_signed = [byte(x) for x in buf]
-                result = self.idcpa_rej_uniform(
-                    buf_signed[504:672], 168, PARAMS_N
-                )
-                a[i][j] = result[0]
-                ctr = result[1]
-                while ctr < PARAMS_N:
-                    missing, ctrn = self.idcpa_rej_uniform(
-                        buf_signed[504:672], 168, PARAMS_N - ctr
-                    )
-                    for k in range(ctr, PARAMS_N):
-                        a[i][j][k] = missing[k - ctr]
-                    ctr = ctr + ctrn
+                uniform_r, uniform_i = self.idcpa_rej_uniform(buf_signed[0:504], 504, PARAMS_N)
+                a[i][j] = uniform_r
+                while uniform_i < PARAMS_N:
+                    missing, ctrn = self.idcpa_rej_uniform(buf_signed[504:672], 168, PARAMS_N - uniform_i)
+                    for k in range(uniform_i, PARAMS_N):
+                        a[i][j][k] = missing[k - uniform_i]
+                    uniform_i = uniform_i + ctrn
         return a
 
     def idcpa_rej_uniform(self, buf, buf_len, req_len):
@@ -80,17 +76,17 @@ class IDCPA:
          arg1: length of byte array
          arg2: requested number of 16-bit integers
         """
-        uniform_r = [0 for x in range(POLY_BYTES)]
+        uniform_r = [0 for _ in range(POLY_BYTES)]
         i, j = 0, 0
 
         while i < req_len and (j + 3) <= buf_len:
-            d1 = (uint16((buf[j]) >> 0) | (uint16(buf[j + 1]) << 8)) & 0xFFF
-            d2 = (uint16((buf[j + 1]) >> 4) | (uint16(buf[j + 2]) << 4)) & 0xFFF
+            d1 = int32((((int32 (buf[j] & 0xFF)) >> 0) | ((int32 (buf[j + 1] & 0xFF)) << 8)) & 0xFFF)
+            d2 = int32 ((((int32 (buf[j + 1] & 0xFF)) >> 4) | ((int32 (buf[j + 2] & 0xFF)) << 4)) & 0xFFF)
             j += 3
-            if d1 < uint16(PARAMS_Q):
+            if d1 < int32(PARAMS_Q):
                 uniform_r[i] = int16(d1)
                 i += 1
-            if i < req_len and d2 < uint16(PARAMS_Q):
+            if i < req_len and d2 < int32(PARAMS_Q):
                 uniform_r[i] = int16(d2)
                 i += 1
 
